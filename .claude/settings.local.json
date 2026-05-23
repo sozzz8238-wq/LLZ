@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sL --connect-timeout 10 -o \"3rdparty/json.hpp\" \"https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp\")",
+      "Bash(python3 *)"
+    ]
+  }
+}

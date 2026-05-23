@@ -42,11 +42,11 @@ def build_ultimate_template(input_folder, action_name, output_json):
     file_list = [f for f in file_list if "_inc" not in f]
 
     if not file_list:
-        print(f"❌ 错误：{input_folder} 无有效数据，跳过")
+        print(f"ERROR: {input_folder} no valid data, skipping")
         return
 
-    print(f"📂 正在处理 [{action_name}] ...")
-    print(f"   找到 {len(file_list)} 个受试者数据")
+    print(f"Processing [{action_name}] ...")
+    print(f"   Found {len(file_list)} subject data files")
 
     TARGET_LENGTH = 100
     normalized_curves = []
@@ -63,7 +63,7 @@ def build_ultimate_template(input_folder, action_name, output_json):
         normalized_curves.append(resampled_curve)
 
     if not normalized_curves:
-        print(f"❌ {action_name} 无有效曲线，跳过\n")
+        print(f"{action_name} no valid curve, skipping\n")
         return
 
     # 生成平均曲线
@@ -77,51 +77,45 @@ def build_ultimate_template(input_folder, action_name, output_json):
         "angle_sequence": [round(num, 2) for num in golden_curve.tolist()]
     }
 
-    # 自动创建输出文件夹
-    os.makedirs("golden_templates", exist_ok=True)
+    # 输出到项目根目录下的 templates/
+    os.makedirs(output_json, exist_ok=True) if os.path.isdir(output_json) else os.makedirs(os.path.dirname(output_json), exist_ok=True)
     with open(output_json, 'w') as out_file:
         json.dump(golden_data, out_file, indent=4)
 
-    print(f"✅ {action_name} 模板生成完成: {output_json}\n")
+    print(f"DONE {action_name} template saved: {output_json}\n")
 
 # ==========================================
-# 【批量处理主函数】自动遍历所有动作文件夹
+# 批量处理主函数
 # ==========================================
-def batch_build_all_templates(root_kinect_folder):
-    """
-    批量处理 Kinect 根目录下的所有动作文件夹（m01/m02/m03...）
-    :param root_kinect_folder: Kinect 总文件夹路径
-    """
-    # 1. 获取根目录下所有子文件夹
+def batch_build_all_templates(root_kinect_folder, output_dir):
     action_folders = []
     for item in os.listdir(root_kinect_folder):
         item_path = os.path.join(root_kinect_folder, item)
-        # 只保留 文件夹 + 以m开头的动作文件夹（m01/m02...）
         if os.path.isdir(item_path) and item.startswith("m"):
             action_folders.append((item, item_path))
 
     if not action_folders:
-        print("❌ 未找到任何动作文件夹！")
+        print("ERROR: No action folders found!")
         return
 
-    print(f"🚀 找到 {len(action_folders)} 个动作，开始批量处理\n")
+    print(f"Found {len(action_folders)} actions, start batch processing\n")
 
-    # 2. 循环处理每个动作
+    os.makedirs(output_dir, exist_ok=True)
+
     for action_code, folder_path in action_folders:
-        # 自动生成动作名：m01_Squat / m02_XXX ...
         action_name = f"{action_code}_Action"
-        # 自动生成输出json路径
-        output_json = f"golden_templates/{action_code}_golden.json"
-        # 执行生成
+        output_json = os.path.join(output_dir, f"{action_code}_golden.json")
         build_ultimate_template(folder_path, action_name, output_json)
 
-    print("🎉 所有动作模板批量生成完成！")
+    print("All action templates generated!")
 
 if __name__ == '__main__':
-    # ====================== 只需要改这一个路径！======================
-    # 填写 Kinect 总根目录（包含 m01/m02/m03... 所有文件夹）
-    KINECT_ROOT_FOLDER = r"E:\嵌赛\UI-PRMD_data\Segmented Movements\Kinect\categories_Angles"
-    # ==============================================================
+    # ====================== Configuration ======================
+    KINECT_ROOT_FOLDER = r"E:\UI-PRMD_data\Segmented Movements\Kinect\categories_Angles"
+    # 输出到项目 templates/ 目录
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+    OUTPUT_DIR = os.path.join(PROJECT_DIR, "templates")
+    # ============================================================
 
-    # 一键批量处理所有动作
-    batch_build_all_templates(KINECT_ROOT_FOLDER)
+    batch_build_all_templates(KINECT_ROOT_FOLDER, OUTPUT_DIR)
